@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
     int** matrix2;
 
     if (argc < 2) 
-	    printf("Usage: %s <file name>\n", argv[1]);
+	    printf("Usage: %s <file name>\n", argv[0]);
 
     if ((fd = open(argv[1], O_RDWR|O_CREAT)) < 0)
 	    error_handling("file open error");
@@ -50,11 +50,17 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+int* get_row_and_col(char* mem) {
+	int rc[2];
+
+	return rc;
+}
+
 int** mem_to_arr(char* mem) {
 	int** matrix;
 	int row = 0, col = 0;
 
-	int i = 0;
+	int i = 0, j = 0;
 	
 	while (1) {
 		if (mem[i] == ' ')
@@ -73,27 +79,43 @@ int** mem_to_arr(char* mem) {
 		i++;
 	}
 
-	i = 0;
-	int j = 0;
-	// 이 부분에서 배열을 동적할당 하도록 하고
-	int arr[4] = { 0, };
-
-	// 이 밖에 반복문 하나 더 둘러서 모든 줄 정수로 변환할 것
-	// 지금은 한 줄만 정수 변환
-	for (i = 0; mem[i] != '\n'; i++) {
-		if (mem[i] == ' ') 
-			j++;
-		else 
-			arr[j] = arr[j] * 10 + (mem[i] - 48);
+	// 행렬 저장할 배열 동적할당
+	matrix = (int**)malloc(sizeof(int*) * row);
+	for (i = 0; i < row; i++) {
+		matrix[i] = (int*)malloc(sizeof(int) * col);
+	}
+	// 행렬 저장할 배열 초기화
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < col; j++) {
+			matrix[i][j] = 0;
+		}
 	}
 
+	// 메모리상에 저장된 내용을 연산 위해 정수 형태 행렬로 변환
 	i = 0;
-	for (i = 0; i < col; i++)
-		printf("%d\n", arr[i]);
+	int r = 0, tmp = 0;
+	while (1) {
+		if (mem[i] == '\n') {
+			r++;
+			tmp = 0;
+			if (r == row)
+				break;
+		} else {
+			if (mem[i] == ' ') 
+				tmp++;
+			else 
+				matrix[r][tmp] = matrix[r][tmp] * 10 + (mem[i] - 48);
+		}
+		
+		i++;
+	}
 
-	// 이런 식으로 두 개 행렬을 모두 이차원 배열에 저장하면, 각 배열의 행, 열수 바탕으로
-	// 행렬 곱 계산하는 함수 만들어 구현
-	// 이후 실행 결과 확인
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < col; j++) {
+			printf("%3d ", matrix[i][j]);
+		}
+		printf("\n");
+	}
 
 	return matrix;
 }
