@@ -10,7 +10,8 @@
 
 #define BUF_SIZE 100
 
-int** mem_to_arr(char* mem);
+void get_row_and_col(char* mem, int* rc);
+int** mem_to_arr(char* mem, int row, int col);
 void error_handling(char* message);
 
 int main(int argc, char** argv) {
@@ -21,6 +22,8 @@ int main(int argc, char** argv) {
     struct stat sb;
     char buf[BUF_SIZE];
     int flag = PROT_WRITE | PROT_READ;
+
+    int rc[2];
 
     int** matrix1;
     int** matrix2;
@@ -41,8 +44,8 @@ int main(int argc, char** argv) {
     if ((file = (char *)mmap(0, file_size, flag, MAP_SHARED, fd, 0)) == NULL)
 	    error_handling("mmap error");
 
-    // 메모리에 있는 데이터를 행렬 형태로 변환
-    matrix1 = mem_to_arr(file);
+    get_row_and_col(file, rc);
+    matrix1 = mem_to_arr(file, rc[0], rc[1]);
 
     munmap(file, file_size);
     close(fd);
@@ -50,18 +53,11 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-int* get_row_and_col(char* mem) {
-	int rc[2];
-
-	return rc;
-}
-
-int** mem_to_arr(char* mem) {
-	int** matrix;
+// 메모리상의 내용 바탕으로 행, 열 수 계산
+void get_row_and_col(char* mem, int* rc) {
 	int row = 0, col = 0;
-
 	int i = 0, j = 0;
-	
+
 	while (1) {
 		if (mem[i] == ' ')
 			col++;
@@ -78,6 +74,16 @@ int** mem_to_arr(char* mem) {
 			row++;
 		i++;
 	}
+
+	rc[0] = row;
+	rc[1] = col;
+}
+
+// 메모리상의 내용을 정수 배열로 변환
+int** mem_to_arr(char* mem, int row, int col) {
+	int** matrix;
+
+	int i = 0, j = 0;
 
 	// 행렬 저장할 배열 동적할당
 	matrix = (int**)malloc(sizeof(int*) * row);
