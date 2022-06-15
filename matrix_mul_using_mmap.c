@@ -10,56 +10,75 @@
 
 #define BUF_SIZE 100
 
-void get_row_and_col(char* mem, int* rc);
-int** mem_to_arr(char* mem, int row, int col);
+void get_row_and_col(char* mem, int* rc);	// 메모리 영역에 저장된 내용 바탕으로 행, 열 계산
+int** mem_to_arr(char* mem, int row, int col);	// 메모리 영역에 저장된 내용을  정수 배열로 변환
+void print_matrix(int** matrix, int row, int col);	// 행렬 출력
 void error_handling(char* message);
 
 int main(int argc, char** argv) {
     int fd;
     char *file = NULL;
     int file_size;
+	int i = 0;
 
     struct stat sb;
     char buf[BUF_SIZE];
     int flag = PROT_WRITE | PROT_READ;
 
-    int rc[2];
+	// 각 행렬 행, 열 저장
+    int* rc[2];
+	for(i = 0; i < 2; i++)
+		rc[i] = (int*)malloc(sizeof(int) * 2);
 
-    int** matrix1;
-    int** matrix2;
+	// 각 행렬 저장
+    int** matrix[2];
 
-    if (argc < 2) 
-	    printf("Usage: %s <file name>\n", argv[0]);
+    if (argc < 3) 
+	    printf("Usage: %s <file1 name> <file2 name>\n", argv[0]);
 
-    if ((fd = open(argv[1], O_RDWR|O_CREAT)) < 0)
-	    error_handling("file open error");
+	for (i = 0; i < 2; i++) {
+		// 파일 열기
+		if ((fd = open(argv[i + 1], O_RDWR|O_CREAT)) < 0)
+			error_handling("file open error");
 
-    if (fstat(fd, &sb) < 0)
-	    error_handling("fstat error");
-    file_size = (int)sb.st_size;
+		// 파일 크기 정보 얻기 위해 fstat 함수 사용
+		if (fstat(fd, &sb) < 0)
+			error_handling("fstat error");
+		file_size = (int)sb.st_size;
 
+		// 파일 크기 바탕으로 동적할당
+		file = (char *)malloc(file_size);
 
-    file = (char *)malloc(file_size);
+		// mmap을 이용한 메모리 매핑
+		if ((file = (char *)mmap(0, file_size, flag, MAP_SHARED, fd, 0)) == NULL)
+			error_handling("mmap error");
 
-    if ((file = (char *)mmap(0, file_size, flag, MAP_SHARED, fd, 0)) == NULL)
-	    error_handling("mmap error");
+		get_row_and_col(file, rc[i]);
+		matrix[i] = mem_to_arr(file, rc[i][0], rc[i][1]);
 
-    get_row_and_col(file, rc);
-    matrix1 = mem_to_arr(file, rc[0], rc[1]);
+		munmap(file, file_size);
+		close(fd);
+	}
 
-    munmap(file, file_size);
-    close(fd);
+	print_matrix(matrix[0], rc[0][0], rc[0][1]);
+	printf("\n");
+	print_matrix(matrix[1], rc[1][0], rc[1][1]);
+	printf("\n");
+	printf("%d %d %d %d\n", rc[0][0], rc[0][1], rc[1][0], rc[1][1]);
+
+	for (i = 0; i < 2; i++)
+		free(rc[i]);
 
     return 0;
 }
 
-// 메모리상의 내용 바탕으로 행, 열 수 계산
 void get_row_and_col(char* mem, int* rc) {
 	int row = 0, col = 0;
 	int i = 0, j = 0;
 
+	// 열 계산
 	while (1) {
-		if (mem[i] == ' ')
+		if (mem[i] == ' ')	
 			col++;
 		if (mem[i] == '\n') {
 			col++;
@@ -68,6 +87,7 @@ void get_row_and_col(char* mem, int* rc) {
 		i++;
 	}
 
+	// 행 계산
 	i = 0;
 	while (mem[i]) {
 		if (mem[i] == '\n')
@@ -75,11 +95,11 @@ void get_row_and_col(char* mem, int* rc) {
 		i++;
 	}
 
+	// 인자로 받은 배열에 행, 열 저장
 	rc[0] = row;
 	rc[1] = col;
 }
 
-// 메모리상의 내용을 정수 배열로 변환
 int** mem_to_arr(char* mem, int row, int col) {
 	int** matrix;
 
@@ -116,16 +136,19 @@ int** mem_to_arr(char* mem, int row, int col) {
 		i++;
 	}
 
+	return matrix;
+}
+
+void print_matrix(int** matrix, int row, int col) {
+	int i = 0, j = 0;
+
 	for (i = 0; i < row; i++) {
 		for (j = 0; j < col; j++) {
 			printf("%3d ", matrix[i][j]);
 		}
 		printf("\n");
 	}
-
-	return matrix;
 }
-
 
 void error_handling(char* message) {
 	fputs(message, stderr);
