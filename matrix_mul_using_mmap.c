@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #define BUF_SIZE 100
 
@@ -26,6 +27,8 @@ int main(int argc, char** argv) {
     char buf[BUF_SIZE];
     int flag = PROT_WRITE | PROT_READ;
 
+	double start, end;
+
 	// 각 행렬 행, 열 저장
     int* rc[2];
 	for(i = 0; i < 2; i++)
@@ -36,6 +39,9 @@ int main(int argc, char** argv) {
 
     if (argc < 3) 
 	    printf("Usage: %s <file1 name> <file2 name>\n", argv[0]);
+
+	// 실행 시간 측정 시작점
+	start = (double)clock() / CLOCKS_PER_SEC;
 
 	for (i = 0; i < 2; i++) {
 		// 파일 열기
@@ -69,20 +75,29 @@ int main(int argc, char** argv) {
 	printf("%d %d %d %d\n", rc[0][0], rc[0][1], rc[1][0], rc[1][1]);
 */
 
+	if (rc[0][1] != rc[1][0])
+		error_handling("matrix multiplication error");
+
 	int** result = (int**)malloc(sizeof(int*) * rc[0][0]);
 	for (i = 0; i < rc[0][0]; i++) {
 		result[i] = (int*)malloc(sizeof(int) * rc[1][1]);
 	}
 
+	// 행렬곱
 	matrix_multiplication(matrix[0], rc[0], matrix[1], rc[1], result);
-	print_matrix(result, rc[0][0], rc[1][1]);
+//	print_matrix(result, rc[0][0], rc[1][1]);
+
+	// 실행 시간 측정 종료점
+	end = (double)clock() / CLOCKS_PER_SEC;
+
+	printf("[%dx%d]행렬과 [%dx%d]행렬의 곱셈 실행 시간: %lf\n", rc[0][0], rc[0][1], rc[1][0], rc[1][1], end - start);
+
 
 	for (i = 0; i < 2; i++)
 		free(rc[i]);
 	
 	for (i = 0; i < rc[0][0]; i++)
 		free(result[i]);
-
 
     return 0;
 }
