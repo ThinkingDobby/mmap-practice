@@ -12,6 +12,7 @@
 
 void get_row_and_col(char* mem, int* rc);	// 메모리 영역에 저장된 내용 바탕으로 행, 열 계산
 int** mem_to_arr(char* mem, int row, int col);	// 메모리 영역에 저장된 내용을  정수 배열로 변환
+void matrix_multiplication(int** matrix1, int* rc1, int** matrix2, int* rc2, int** result); // 행렬곱 계산
 void print_matrix(int** matrix, int row, int col);	// 행렬 출력
 void error_handling(char* message);
 
@@ -60,14 +61,28 @@ int main(int argc, char** argv) {
 		close(fd);
 	}
 
+/*
 	print_matrix(matrix[0], rc[0][0], rc[0][1]);
 	printf("\n");
 	print_matrix(matrix[1], rc[1][0], rc[1][1]);
 	printf("\n");
 	printf("%d %d %d %d\n", rc[0][0], rc[0][1], rc[1][0], rc[1][1]);
+*/
+
+	int** result = (int**)malloc(sizeof(int*) * rc[0][0]);
+	for (i = 0; i < rc[0][0]; i++) {
+		result[i] = (int*)malloc(sizeof(int) * rc[1][1]);
+	}
+
+	matrix_multiplication(matrix[0], rc[0], matrix[1], rc[1], result);
+	print_matrix(result, rc[0][0], rc[1][1]);
 
 	for (i = 0; i < 2; i++)
 		free(rc[i]);
+	
+	for (i = 0; i < rc[0][0]; i++)
+		free(result[i]);
+
 
     return 0;
 }
@@ -147,6 +162,19 @@ void print_matrix(int** matrix, int row, int col) {
 			printf("%3d ", matrix[i][j]);
 		}
 		printf("\n");
+	}
+}
+
+void matrix_multiplication(int** matrix1, int* rc1, int** matrix2, int* rc2, int** result) {
+	int i = 0, j = 0, k = 0;
+	
+	for (i = 0; i < rc1[0]; i++) {
+		for (j = 0; j < rc2[1]; j++) {
+			result[i][j] = 0;
+			for (k = 0; k < rc1[1]; k++) {
+				result[i][j] += matrix1[i][k] * matrix2[k][j];
+			}
+		}
 	}
 }
 
